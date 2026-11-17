@@ -12,7 +12,12 @@ Marker types: D draft, R client review, P publish to the site and hub feed, L Li
 
 ## How the data is read
 
-The page runs as a Claude artifact and reads Asana through the viewer's own Asana connector. It makes read-only calls (`get_tasks` and `get_task`). Outside Claude there is no connector, so it shows a "not connected" message and no dates.
+Two modes, same page:
+
+- **Live (inside Claude):** the page runs as a Claude artifact and reads Asana through the viewer's own Asana connector, using read-only calls (`get_tasks` and `get_task`).
+- **Snapshot (everywhere else, including GitHub Pages):** with no Asana connection, the page reads `data.json` from this repo. That file is a copy of the plan pulled from Asana at a point in time, and the page shows when. It contains task names, dates, and status only, with no Asana links or ids.
+
+To refresh the snapshot, ask Claude to republish the BBP calendar. Claude pulls the current plan from Asana, rewrites `data.json`, commits, and pushes.
 
 It reads one section of the Asana project and treats these as content pieces:
 

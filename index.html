@@ -152,9 +152,15 @@ footer{margin-top:26px;color:var(--muted);font-size:13px}
   var errors = {};         /* key -> error object */
   var syncedAt = null;
   var view = "pipeline";
+  var staticMode = false;  /* true when showing the committed data.json snapshot */
+  var snapshotAt = null;
 
   var $ = function(id){ return document.getElementById(id); };
   function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function A(url, cls, inner, extra){
+    return url ? '<a' + (cls ? ' class="' + cls + '"' : '') + ' href="' + esc(url) + '" target="_blank" rel="noopener"' + (extra || '') + '>' + inner + '</a>'
+               : '<span' + (cls ? ' class="' + cls + '"' : '') + (extra || '') + '>' + inner + '</span>';
+  }
   function parseDate(s){ if(!s) return null; var p = String(s).split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
   function startOfWeek(d){ var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); var wd = (x.getDay()+6)%7; x.setDate(x.getDate()-wd); return x; }
   function addDays(d,n){ var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate()+n); return x; }
@@ -279,6 +285,11 @@ footer{margin-top:26px;color:var(--muted);font-size:13px}
     var el = $("status");
     var codes = Object.keys(errors);
     var syncEl = $("synced");
+    if(staticMode){
+      syncEl.textContent = snapshotAt ? "Snapshot from Asana, " + new Date(snapshotAt).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "Snapshot from Asana";
+      el.innerHTML = "";
+      return;
+    }
     if(syncedAt){ syncEl.textContent = "Synced from Asana " + new Date(syncedAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); }
     if(!codes.length){ el.innerHTML = ""; return; }
     var e = errors[codes[0]];
@@ -316,17 +327,17 @@ footer{margin-top:26px;color:var(--muted);font-size:13px}
     if(!list.length){ el.hidden = true; return; }
     el.hidden = false;
     el.innerHTML = '<h2>Next up</h2><div class="nextlist">' + list.map(function(i){
-      return '<a class="nx' + (i.late ? " late" : "") + '" href="' + esc(i.url) + '" target="_blank" rel="noopener">' +
+      return A(i.url, 'nx' + (i.late ? " late" : ""),
         marker(i, true) +
-        '<span><span class="t">' + esc(i.label) + '</span><br><span class="d">' + fmt(i.due) + (i.late ? " (overdue)" : "") + '</span></span></a>';
+        '<span><span class="t">' + esc(i.label) + '</span><br><span class="d">' + fmt(i.due) + (i.late ? " (overdue)" : "") + '</span></span>');
     }).join("") + '</div>';
   }
   function marker(i, asSpan){
     var cls = "mk " + i.kind + (i.completed ? " done" : "") + (i.late ? " late" : "");
     var txt = i.completed ? "&#10003;" : (i.late ? "!" : KIND_LABEL[i.kind]);
     var tip = KIND_NAME[i.kind] + ": " + i.label + ", " + fmt(i.due) + (i.completed ? ", done" : (i.late ? ", overdue" : ""));
-    if(asSpan) return '<i class="' + cls + '" title="' + esc(tip) + '">' + txt + '</i>';
-    return '<a class="' + cls + '" href="' + esc(i.url) + '" target="_blank" rel="noopener" title="' + esc(tip) + '" aria-label="' + esc(tip) + '">' + txt + '</a>';
+    if(asSpan || !i.url) return '<i class="' + cls + '" title="' + esc(tip) + '">' + txt + '</i>';
+    return A(i.url, cls, txt, ' title="' + esc(tip) + '" aria-label="' + esc(tip) + '"');
   }
 
   function pipeline(m){
@@ -356,7 +367,7 @@ footer{margin-top:26px;color:var(--muted);font-size:13px}
       var mine = m.items.filter(function(i){ return i.parent.gid === p.gid; });
       var title = cleanTitle(p.name);
       var pubDate = p.due ? parseDate(p.due) : null;
-      out += '<div class="lab"><a href="' + esc(p.url) + '" target="_blank" rel="noopener">' + esc(title) + '</a><small>' +
+      out += '<div class="lab">' + (p.url ? A(p.url, '', esc(title)) : '<b>' + esc(title) + '</b>') + '<small>' +
         (/^Hub:/i.test(p.name) ? "Hub page" : "Insight article") + (pubDate ? ", publishes " + fmt(pubDate) : "") + '</small></div>';
       weeks.forEach(function(w){
         var end = addDays(w,7);
@@ -390,7 +401,7 @@ footer{margin-top:26px;color:var(--muted);font-size:13px}
         arr.map(function(i){
           var st = i.completed ? '<span class="st ok">Done</span>' : (i.late ? '<span class="st late">Overdue</span>' : '<span class="st">Open</span>');
           return '<div class="row"><span class="dt">' + fmt(i.due) + '</span>' + marker(i,false) +
-            '<span class="nm"><a href="' + esc(i.url) + '" target="_blank" rel="noopener">' + esc(i.label) + '</a></span>' +
+            '<span class="nm">' + A(i.url, '', esc(i.label)) + '</span>' +
             '<span class="art">' + esc(i.title) + '</span>' + st + '</div>';
         }).join("") + '</section>';
     }).join("") + '</div>';
@@ -408,9 +419,32 @@ footer{margin-top:26px;color:var(--muted);font-size:13px}
   var h0 = location.hash.replace("#",""); if(h0 === "by-month") setView("by-month", true);
 
   $("refresh").addEventListener("click", function(){
+    if(staticMode){ loadStatic().catch(noMcp); return; }
     if(!mcp) return;
     load();
   });
+
+  /* ---------- snapshot mode ---------- */
+  function loadStatic(){
+    return fetch("data.json?" + Date.now(), {cache:"no-store"}).then(function(r){
+      if(!r.ok) throw new Error("data.json " + r.status);
+      return r.json();
+    }).then(function(d){
+      parents = {}; details = {};
+      (d.pieces || []).forEach(function(p, i){
+        var g = "p" + i;
+        parents[g] = {gid:g, name:p.name, due:p.due, completed:!!p.completed, url:null};
+        details[g] = {subs:(p.tasks || []).map(function(t, j){
+          return {gid:g + "-" + j, name:t.name, kind:classify(t.name), due:t.due, completed:!!t.completed, url:null};
+        })};
+      });
+      staticMode = true; listLoaded = true; errors = {};
+      snapshotAt = d.generated ? new Date(d.generated).getTime() : null;
+      var f = document.querySelector("footer");
+      if(f) f.textContent = "Snapshot view. Dates are managed in Asana, and this page is republished from there on request.";
+      render();
+    });
+  }
 
   /* ---------- boot ---------- */
   function noMcp(){
@@ -418,14 +452,15 @@ footer{margin-top:26px;color:var(--muted);font-size:13px}
     $("status").innerHTML = '<div class="msg err" role="alert"><b>This calendar loads from Asana inside Claude</b>Open it from your artifacts in claude.ai with Asana connected. Outside Claude there is no data to show, and the page will not display made-up dates.</div>';
   }
   function boot(){
-    if(!window.claude || typeof window.claude.use !== "function"){ noMcp(); return; }
+    function fallback(){ loadStatic().catch(noMcp); }
+    if(!window.claude || typeof window.claude.use !== "function"){ fallback(); return; }
     window.claude.use("mcp").then(function(ns){
-      if(!ns){ noMcp(); return; }
+      if(!ns){ fallback(); return; }
       mcp = ns;
       render();
       load();
       setInterval(function(){ if(!document.hidden) load(); }, 300000);
-    }).catch(function(){ noMcp(); });
+    }).catch(function(){ fallback(); });
   }
   boot();
 })();
