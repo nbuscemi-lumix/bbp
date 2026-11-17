@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Black Bay Editorial Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a week-by-week swimlane (one row per content piece) plus a month list, both read live from Asana. */
+:root{
+  --paper:#F4F5F2; --surface:#FFFFFF; --ink:#14212E; --muted:#5C6B78; --line:#D9DDD6; --bay:#0F5F6E;
+  --dr:#6B7B8C; --rv:#B0731A; --pub:#0F6B5B; --li:#2D62B0; --late:#B3372F; --today:#E6F0EE;
+  --font-display:"Instrument Serif", Georgia, "Times New Roman", serif;
+  --font-body:"Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F1A24; --surface:#16242F; --ink:#E6ECEF; --muted:#9AA9B5; --line:#2B3B48; --bay:#5CB8C7;
+    --dr:#93A2B2; --rv:#E0A24A; --pub:#4CC2A8; --li:#6FA1E8; --late:#F07A70; --today:#193039;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F1A24; --surface:#16242F; --ink:#E6ECEF; --muted:#9AA9B5; --line:#2B3B48; --bay:#5CB8C7;
+  --dr:#93A2B2; --rv:#E0A24A; --pub:#4CC2A8; --li:#6FA1E8; --late:#F07A70; --today:#193039;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.45}
+a{color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 56px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:18px}
+h1{font-family:var(--font-display);font-weight:400;font-size:40px;line-height:1.05;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:6px 0 0;max-width:62ch}
+.sync{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+button{font:inherit;color:inherit}
+.btn{border:1px solid var(--line);background:var(--surface);padding:6px 12px;border-radius:6px;cursor:pointer}
+.btn:hover{border-color:var(--bay)}
+.btn:focus-visible,.tab:focus-visible,a:focus-visible{outline:2px solid var(--bay);outline-offset:2px}
+.stats{display:flex;flex-wrap:wrap;gap:8px 28px;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:18px}
+.stat b{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;margin-right:6px}
+.stat span{color:var(--muted);font-size:13px}
+.stat.late b{color:var(--late)}
+.next{margin:0 0 22px}
+.next h2,.mh2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0 0 8px}
+.nextlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.nx{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;text-decoration:none}
+.nx:hover{border-color:var(--bay)}
+.nx .t{font-weight:500}
+.nx .d{color:var(--muted);font-size:13px}
+.nx.late{border-left:3px solid var(--late)}
+.tabs{display:flex;gap:4px;margin-bottom:12px}
+.tab{border:1px solid var(--line);background:transparent;padding:7px 14px;border-radius:6px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0 0 12px;color:var(--muted);font-size:13px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.mk{--c:var(--dr);display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;
+  border:2px solid var(--c);color:var(--c);background:var(--surface);font-size:11px;font-weight:600;text-decoration:none;flex:none}
+.mk.dr{--c:var(--dr)} .mk.rv{--c:var(--rv)} .mk.pub{--c:var(--pub)} .mk.li{--c:var(--li)}
+.mk.done{background:var(--c);color:var(--surface)}
+.mk.late{--c:var(--late)}
+.mk.pub{width:26px;height:26px;font-size:12px}
+.mk:hover{transform:scale(1.12)}
+.scroller{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.grid{display:grid;min-width:max-content}
+.grid>div{border-bottom:1px solid var(--line)}
+.corner,.lab{position:sticky;left:0;z-index:2;background:var(--surface);border-right:1px solid var(--line)}
+.lab{padding:10px 12px;display:flex;flex-direction:column;justify-content:center;min-height:52px}
+.lab a{text-decoration:none;font-weight:600}
+.lab a:hover{text-decoration:underline}
+.lab small{color:var(--muted);font-size:12px}
+.mon{padding:8px 10px;font-weight:600;font-size:13px;border-left:1px solid var(--line);background:var(--surface)}
+.wk{padding:4px 6px;color:var(--muted);font-size:11px;border-left:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cell{border-left:1px solid var(--line);padding:6px 4px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;align-content:center;justify-content:center;min-height:52px}
+.tw{background:var(--today)}
+.months{display:grid;gap:22px}
+.month{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.month header{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;justify-content:space-between;padding:12px 16px;margin:0;border-bottom:1px solid var(--line)}
+.month h3{font-family:var(--font-display);font-weight:400;font-size:26px;margin:0}
+.counts{color:var(--muted);font-size:13px}
+.row{display:grid;grid-template-columns:64px 28px minmax(0,1fr) minmax(0,200px) 72px;gap:10px;align-items:center;padding:9px 16px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .dt{font-variant-numeric:tabular-nums;color:var(--muted)}
+.row .nm a{text-decoration:none}
+.row .nm a:hover{text-decoration:underline}
+.row .art{color:var(--muted);font-size:13px}
+.row .st{font-size:12px;text-align:right;color:var(--muted)}
+.row .st.late{color:var(--late);font-weight:600}
+.row .st.ok{color:var(--pub);font-weight:600}
+.msg{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--bay);border-radius:8px;padding:14px 16px;margin:12px 0}
+.msg.err{border-left-color:var(--late)}
+.msg b{display:block;margin-bottom:2px}
+footer{margin-top:26px;color:var(--muted);font-size:13px}
+@media (max-width:640px){
+  h1{font-size:32px}
+  .row{grid-template-columns:56px 28px minmax(0,1fr);}
+  .row .art,.row .st{grid-column:3}
+  .row .st{text-align:left}
+}
+@media (prefers-reduced-motion:reduce){.mk:hover{transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Black Bay Editorial Calendar</h1>
+      <p class="sub">Every insight article and what we do with it, week by week. Nothing on this page is typed in by hand. It reads the BBP - Program project in Asana.</p>
+    </div>
+    <div class="sync">
+      <span id="synced" aria-live="polite">Connecting to Asana</span>
+      <button class="btn" id="refresh" type="button">Refresh</button>
+    </div>
+  </header>
+
+  <div id="status"></div>
+  <div id="stats" class="stats" hidden></div>
+  <section id="next" class="next" hidden></section>
+
+  <div class="tabs" role="tablist" aria-label="Calendar views">
+    <button class="tab" role="tab" id="tab-pipeline" aria-selected="true" data-view="pipeline" type="button">Pipeline by week</button>
+    <button class="tab" role="tab" id="tab-by-month" aria-selected="false" data-view="by-month" type="button">By month</button>
+  </div>
+  <div class="legend" aria-label="Legend">
+    <span><i class="mk dr" style="width:18px;height:18px;font-size:10px">D</i> Draft</span>
+    <span><i class="mk rv" style="width:18px;height:18px;font-size:10px">R</i> Client review</span>
+    <span><i class="mk pub" style="width:20px;height:20px;font-size:10px">P</i> Publish to site and hub feed</span>
+    <span><i class="mk li" style="width:18px;height:18px;font-size:10px">L</i> LinkedIn</span>
+    <span><i class="mk dr done" style="width:18px;height:18px;font-size:10px">&#10003;</i> Done</span>
+    <span><i class="mk dr late" style="width:18px;height:18px;font-size:10px">!</i> Overdue</span>
+  </div>
+  <main id="view" aria-live="polite"></main>
+  <footer>Open any marker or task name to edit it in Asana. Changes there show up here after a refresh.</footer>
+</div>
+
+<script>
+(function(){
+  var SERVER = "Asana";
+  var SECTION = "1213220255797655"; /* Content Development section of BBP - Program */
+  var LIST_FIELDS = "name,due_on,completed,permalink_url";
+  var KIND_LABEL = {dr:"D", rv:"R", pub:"P", li:"L"};
+  var KIND_NAME = {dr:"Draft", rv:"Review", pub:"Publish", li:"LinkedIn"};
+
+  var mcp = null;
+  var parents = {};        /* gid -> {gid,name,due,completed,url} from the section list */
+  var details = {};        /* gid -> {parent, subs[]} from get_task */
+  var listLoaded = false;
+  var errors = {};         /* key -> error object */
+  var syncedAt = null;
+  var view = "pipeline";
+
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function parseDate(s){ if(!s) return null; var p = String(s).split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
+  function startOfWeek(d){ var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); var wd = (x.getDay()+6)%7; x.setDate(x.getDate()-wd); return x; }
+  function addDays(d,n){ var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate()+n); return x; }
+  function fmt(d){ return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
+  function fmtLong(d){ return d.toLocaleDateString("en-US",{month:"long",year:"numeric"}); }
+  var now = new Date();
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  function classify(n){
+    if(/^\[LinkedIn\]/i.test(n)) return "li";
+    if(/^\[Review\]/i.test(n)) return "rv";
+    if(/^\[Web\]\s*Publish/i.test(n)) return "pub";
+    return "dr";
+  }
+  function cleanLabel(n){ return n.replace(/^\[[^\]]+\]\s*/,""); }
+  function cleanTitle(n){ return n.replace(/^(Insight Article|Hub):\s*/i,""); }
+  function unwrap(res){
+    var p = res && res.payload;
+    if(p === undefined && res && res.content && res.content[0] && res.content[0].text){
+      try{ p = JSON.parse(res.content[0].text); }catch(e){ p = null; }
+    }
+    if(p && typeof p === "object" && p.data !== undefined) return p.data;
+    return p;
+  }
+
+  /* ---------- data ---------- */
+  var loading = false;
+  function call(tool, input){ return mcp.callTool(SERVER, tool, input, {cache:false}); }
+  function pool(list, n, fn){
+    return new Promise(function(resolve){
+      if(!list.length){ resolve(); return; }
+      var i = 0, active = 0, done = 0;
+      function next(){
+        while(active < n && i < list.length){
+          (function(item){
+            active++;
+            fn(item).then(function(){}, function(){}).then(function(){
+              active--; done++;
+              if(done === list.length) resolve(); else next();
+            });
+          })(list[i++]);
+        }
+      }
+      next();
+    });
+  }
+  function fail(key){ return function(e){ errors[key] = e || {code:"upstream_error"}; }; }
+
+  function load(){
+    if(!mcp || loading) return;
+    loading = true;
+    $("synced").textContent = "Loading from Asana";
+    var count = 0;
+    call("get_tasks", {section:SECTION, limit:100, opt_fields:LIST_FIELDS}).then(function(res){
+      errors = {};
+      var data = unwrap(res) || [];
+      var ps = {};
+      data.forEach(function(t){
+        if(/^(Hub:|Insight Article:)/i.test(t.name || "")){
+          ps[t.gid] = {gid:t.gid, name:t.name, due:t.due_on, completed:!!t.completed, url:t.permalink_url};
+        }
+      });
+      parents = ps; listLoaded = true; render();
+      var gids = Object.keys(ps);
+      /* get_task lists subtasks by name only, so fetch the subtask ids first, then each subtask for its date */
+      return pool(gids, 6, function(g){
+        return call("get_task", {task_id:g, opt_fields:"name,subtasks.name", include_comments:false}).then(function(r){
+          var t = unwrap(r) || {};
+          details[g] = {subs:(t.subtasks || []).map(function(s){ return {gid:s.gid, name:s.name || "", kind:classify(s.name || "")}; })};
+        }, fail("t" + g));
+      }).then(function(){
+        var subs = [];
+        gids.forEach(function(g){ ((details[g] && details[g].subs) || []).forEach(function(s){ subs.push(s); }); });
+        return pool(subs, 8, function(s){
+          return call("get_task", {task_id:s.gid, opt_fields:"name,due_on,completed,permalink_url", include_comments:false, include_subtasks:false}).then(function(r){
+            var t = unwrap(r) || {};
+            s.due = t.due_on; s.completed = !!t.completed; s.url = t.permalink_url;
+            if(t.name) { s.name = t.name; s.kind = classify(t.name); }
+            if(++count % 8 === 0) render();
+          }, fail("s" + s.gid));
+        });
+      });
+    }).catch(fail("list")).then(function(){
+      loading = false;
+      syncedAt = Date.now();
+      render();
+    });
+  }
+  function stamp(){}
+
+  /* ---------- derived ---------- */
+  function model(){
+    var ps = Object.keys(parents).map(function(g){ return parents[g]; })
+      .sort(function(a,b){ return (a.due||"9").localeCompare(b.due||"9"); });
+    var items = [];
+    ps.forEach(function(p){
+      var d = details[p.gid];
+      var title = cleanTitle(p.name);
+      if(d){ d.subs.forEach(function(s){
+        items.push({gid:s.gid, parent:p, title:title, label:cleanLabel(s.name), kind:s.kind, due:parseDate(s.due), completed:s.completed, url:s.url});
+      }); }
+    });
+    items = items.filter(function(i){ return i.due; });
+    items.forEach(function(i){ i.late = !i.completed && i.due < today; });
+    return {parents:ps, items:items};
+  }
+
+  /* ---------- render ---------- */
+  function render(){
+    renderStatus();
+    var m = model();
+    renderStats(m);
+    renderNext(m);
+    var v = $("view");
+    if(!m.items.length){
+      v.innerHTML = loading || !listLoaded ? '<div class="msg"><b>Loading from Asana</b>Reading the Content Development section of BBP - Program.</div>' : '<div class="msg"><b>No dated tasks found</b>Asana returned no subtasks with due dates under tasks named "Insight Article:" or "Hub:" in Content Development.</div>';
+      return;
+    }
+    v.innerHTML = view === "pipeline" ? pipeline(m) : byMonth(m);
+  }
+  function renderStatus(){
+    var el = $("status");
+    var codes = Object.keys(errors);
+    var syncEl = $("synced");
+    if(syncedAt){ syncEl.textContent = "Synced from Asana " + new Date(syncedAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); }
+    if(!codes.length){ el.innerHTML = ""; return; }
+    var e = errors[codes[0]];
+    var title = "Asana did not respond", body = "Press Refresh to try again.";
+    switch(e.code){
+      case "needs_reauth": title = "Asana sign-in expired"; body = "Reconnect Asana in claude.ai Settings under Connectors, then press Refresh."; break;
+      case "server_not_connected": title = "Asana is not connected"; body = "Add Asana in claude.ai Settings under Connectors, then reload this page."; break;
+      case "selection_required": title = "Choose an Asana connection"; body = "More than one Asana connector is available. Pick one when claude.ai asks, then press Refresh."; break;
+      case "not_in_manifest": case "approval_required": case "consent_required": title = "This page is not allowed to read Asana yet"; body = "Allow the Asana connection for this page when claude.ai asks, then press Refresh."; break;
+      case "blocked_by_policy": title = "Your organization blocks this Asana request"; body = "Ask an admin to allow the Asana task tools."; break;
+      case "tool_error": title = "Asana reported a problem"; body = "The request reached Asana but failed. Press Refresh. If it repeats, check that BBP - Program is still shared with you."; break;
+    }
+    el.innerHTML = '<div class="msg err" role="alert"><b>' + esc(title) + '</b>' + esc(body) + '</div>';
+  }
+  function renderStats(m){
+    var el = $("stats");
+    if(!m.items.length){ el.hidden = true; return; }
+    var done = m.items.filter(function(i){ return i.completed; }).length;
+    var late = m.items.filter(function(i){ return i.late; }).length;
+    var pubs = m.items.filter(function(i){ return i.kind === "pub"; }).length;
+    el.hidden = false;
+    el.innerHTML =
+      '<div class="stat"><b>' + m.parents.length + '</b><span>content pieces</span></div>' +
+      '<div class="stat"><b>' + pubs + '</b><span>site publishes scheduled</span></div>' +
+      '<div class="stat"><b>' + m.items.length + '</b><span>tasks in the plan</span></div>' +
+      '<div class="stat"><b>' + done + '</b><span>done</span></div>' +
+      '<div class="stat' + (late ? " late" : "") + '"><b>' + late + '</b><span>overdue</span></div>';
+  }
+  function renderNext(m){
+    var el = $("next");
+    var open = m.items.filter(function(i){ return !i.completed; }).sort(function(a,b){ return a.due - b.due; });
+    var late = open.filter(function(i){ return i.late; });
+    var upcoming = open.filter(function(i){ return !i.late; });
+    var list = late.concat(upcoming).slice(0,6);
+    if(!list.length){ el.hidden = true; return; }
+    el.hidden = false;
+    el.innerHTML = '<h2>Next up</h2><div class="nextlist">' + list.map(function(i){
+      return '<a class="nx' + (i.late ? " late" : "") + '" href="' + esc(i.url) + '" target="_blank" rel="noopener">' +
+        marker(i, true) +
+        '<span><span class="t">' + esc(i.label) + '</span><br><span class="d">' + fmt(i.due) + (i.late ? " (overdue)" : "") + '</span></span></a>';
+    }).join("") + '</div>';
+  }
+  function marker(i, asSpan){
+    var cls = "mk " + i.kind + (i.completed ? " done" : "") + (i.late ? " late" : "");
+    var txt = i.completed ? "&#10003;" : (i.late ? "!" : KIND_LABEL[i.kind]);
+    var tip = KIND_NAME[i.kind] + ": " + i.label + ", " + fmt(i.due) + (i.completed ? ", done" : (i.late ? ", overdue" : ""));
+    if(asSpan) return '<i class="' + cls + '" title="' + esc(tip) + '">' + txt + '</i>';
+    return '<a class="' + cls + '" href="' + esc(i.url) + '" target="_blank" rel="noopener" title="' + esc(tip) + '" aria-label="' + esc(tip) + '">' + txt + '</a>';
+  }
+
+  function pipeline(m){
+    var minD = m.items.reduce(function(a,i){ return i.due < a ? i.due : a; }, m.items[0].due);
+    var maxD = m.items.reduce(function(a,i){ return i.due > a ? i.due : a; }, m.items[0].due);
+    var first = startOfWeek(minD < today ? minD : today);
+    var last = startOfWeek(maxD);
+    var weeks = [];
+    for(var w = first; w <= last; w = addDays(w,7)) weeks.push(w);
+    var cols = "minmax(190px,230px) repeat(" + weeks.length + ", 76px)";
+    var out = '<div class="scroller"><div class="grid" style="grid-template-columns:' + cols + '">';
+    /* month header */
+    out += '<div class="corner"></div>';
+    var i0 = 0;
+    while(i0 < weeks.length){
+      var key = weeks[i0].getFullYear()*12 + weeks[i0].getMonth(), span = 1;
+      while(i0+span < weeks.length && (weeks[i0+span].getFullYear()*12 + weeks[i0+span].getMonth()) === key) span++;
+      out += '<div class="mon" style="grid-column:span ' + span + '">' + esc(weeks[i0].toLocaleDateString("en-US",{month:"long",year:"numeric"})) + '</div>';
+      i0 += span;
+    }
+    out += '<div class="corner"></div>';
+    weeks.forEach(function(w){
+      var tw = today >= w && today < addDays(w,7);
+      out += '<div class="wk' + (tw ? " tw" : "") + '">' + (tw ? "This week<br>" : "Wk of<br>") + fmt(w) + '</div>';
+    });
+    m.parents.forEach(function(p){
+      var mine = m.items.filter(function(i){ return i.parent.gid === p.gid; });
+      var title = cleanTitle(p.name);
+      var pubDate = p.due ? parseDate(p.due) : null;
+      out += '<div class="lab"><a href="' + esc(p.url) + '" target="_blank" rel="noopener">' + esc(title) + '</a><small>' +
+        (/^Hub:/i.test(p.name) ? "Hub page" : "Insight article") + (pubDate ? ", publishes " + fmt(pubDate) : "") + '</small></div>';
+      weeks.forEach(function(w){
+        var end = addDays(w,7);
+        var here = mine.filter(function(i){ return i.due >= w && i.due < end; }).sort(function(a,b){ return a.due - b.due; });
+        var tw = today >= w && today < end;
+        out += '<div class="cell' + (tw ? " tw" : "") + '">' + here.map(function(i){ return marker(i,false); }).join("") + '</div>';
+      });
+    });
+    out += '</div></div>';
+    if(loading){ out += '<p class="counts" style="margin-top:8px">Still loading task dates from Asana.</p>'; }
+    return out;
+  }
+
+  function byMonth(m){
+    var groups = {};
+    m.items.forEach(function(i){
+      var k = i.due.getFullYear()*100 + i.due.getMonth();
+      (groups[k] = groups[k] || []).push(i);
+    });
+    var keys = Object.keys(groups).sort(function(a,b){ return a - b; });
+    return '<div class="months">' + keys.map(function(k){
+      var arr = groups[k].sort(function(a,b){ return a.due - b.due || a.parent.due.localeCompare(b.parent.due); });
+      var c = {dr:0, rv:0, pub:0, li:0};
+      arr.forEach(function(i){ c[i.kind]++; });
+      var parts = [];
+      if(c.dr) parts.push(c.dr + (c.dr === 1 ? " draft" : " drafts"));
+      if(c.rv) parts.push(c.rv + (c.rv === 1 ? " review" : " reviews"));
+      if(c.pub) parts.push(c.pub + (c.pub === 1 ? " publish" : " publishes"));
+      if(c.li) parts.push(c.li + " LinkedIn");
+      return '<section class="month"><header><h3>' + esc(fmtLong(arr[0].due)) + '</h3><span class="counts">' + parts.join(", ") + '</span></header>' +
+        arr.map(function(i){
+          var st = i.completed ? '<span class="st ok">Done</span>' : (i.late ? '<span class="st late">Overdue</span>' : '<span class="st">Open</span>');
+          return '<div class="row"><span class="dt">' + fmt(i.due) + '</span>' + marker(i,false) +
+            '<span class="nm"><a href="' + esc(i.url) + '" target="_blank" rel="noopener">' + esc(i.label) + '</a></span>' +
+            '<span class="art">' + esc(i.title) + '</span>' + st + '</div>';
+        }).join("") + '</section>';
+    }).join("") + '</div>';
+  }
+
+  /* ---------- controls ---------- */
+  function setView(v, fromHash){
+    view = v;
+    ["pipeline","by-month"].forEach(function(n){ $("tab-"+n).setAttribute("aria-selected", n === v ? "true" : "false"); });
+    if(!fromHash){ try{ history.replaceState(null,"","#"+v); }catch(e){ try{ location.hash = v; }catch(e2){} } }
+    render();
+  }
+  document.querySelectorAll(".tab").forEach(function(b){ b.addEventListener("click", function(){ setView(b.getAttribute("data-view")); }); });
+  window.addEventListener("hashchange", function(){ var h = location.hash.replace("#",""); if(h === "pipeline" || h === "by-month") setView(h, true); });
+  var h0 = location.hash.replace("#",""); if(h0 === "by-month") setView("by-month", true);
+
+  $("refresh").addEventListener("click", function(){
+    if(!mcp) return;
+    load();
+  });
+
+  /* ---------- boot ---------- */
+  function noMcp(){
+    $("synced").textContent = "Not connected";
+    $("status").innerHTML = '<div class="msg err" role="alert"><b>This calendar loads from Asana inside Claude</b>Open it from your artifacts in claude.ai with Asana connected. Outside Claude there is no data to show, and the page will not display made-up dates.</div>';
+  }
+  function boot(){
+    if(!window.claude || typeof window.claude.use !== "function"){ noMcp(); return; }
+    window.claude.use("mcp").then(function(ns){
+      if(!ns){ noMcp(); return; }
+      mcp = ns;
+      render();
+      load();
+      setInterval(function(){ if(!document.hidden) load(); }, 300000);
+    }).catch(function(){ noMcp(); });
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
