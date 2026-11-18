@@ -1,469 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Black Bay Editorial Calendar</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BBP Editorial Calendar (Gantt view, for consideration)</title>
+<meta name="robots" content="noindex, nofollow">
 <style>
-/* Layout idea: a week-by-week swimlane (one row per content piece) plus a month list, both read live from Asana. */
 :root{
-  --paper:#F4F5F2; --surface:#FFFFFF; --ink:#14212E; --muted:#5C6B78; --line:#D9DDD6; --bay:#0F5F6E;
-  --dr:#6B7B8C; --rv:#B0731A; --pub:#0F6B5B; --li:#2D62B0; --late:#B3372F; --today:#E6F0EE;
-  --font-display:"Instrument Serif", Georgia, "Times New Roman", serif;
-  --font-body:"Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  color-scheme: light;
+  --bg:#ffffff;--panel:#fafaf8;--ink:#161614;--mute:#6b6a64;--line:#e6e5df;--line2:#f0efea;
+  --web:#1f5f7a;--rev:#b7791f;--li:#7a3e9d;--today:#d0021b;--accent:#103F57;
+  --task-w:360px;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --paper:#0F1A24; --surface:#16242F; --ink:#E6ECEF; --muted:#9AA9B5; --line:#2B3B48; --bay:#5CB8C7;
-    --dr:#93A2B2; --rv:#E0A24A; --pub:#4CC2A8; --li:#6FA1E8; --late:#F07A70; --today:#193039;
-    color-scheme: dark;
-  }
+@media (prefers-color-scheme:dark){
+  :root{--bg:#171716;--panel:#1f1f1d;--ink:#f2f1ec;--mute:#a09f97;--line:#31312e;--line2:#262624;
+    --web:#5fb0d0;--rev:#e0b050;--li:#c295e0;--today:#ff5d6e;--accent:#8fc3dd}
 }
-:root[data-theme="dark"]{
-  --paper:#0F1A24; --surface:#16242F; --ink:#E6ECEF; --muted:#9AA9B5; --line:#2B3B48; --bay:#5CB8C7;
-  --dr:#93A2B2; --rv:#E0A24A; --pub:#4CC2A8; --li:#6FA1E8; --late:#F07A70; --today:#193039;
-  color-scheme: dark;
-}
-*{box-sizing:border-box}
-html,body{margin:0}
-body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.45}
-a{color:inherit}
-.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 56px}
-header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:18px}
-h1{font-family:var(--font-display);font-weight:400;font-size:40px;line-height:1.05;margin:0;text-wrap:balance}
-.sub{color:var(--muted);margin:6px 0 0;max-width:62ch}
-.sync{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
-button{font:inherit;color:inherit}
-.btn{border:1px solid var(--line);background:var(--surface);padding:6px 12px;border-radius:6px;cursor:pointer}
-.btn:hover{border-color:var(--bay)}
-.btn:focus-visible,.tab:focus-visible,a:focus-visible{outline:2px solid var(--bay);outline-offset:2px}
-.stats{display:flex;flex-wrap:wrap;gap:8px 28px;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:18px}
-.stat b{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;margin-right:6px}
-.stat span{color:var(--muted);font-size:13px}
-.stat.late b{color:var(--late)}
-.next{margin:0 0 22px}
-.next h2,.mh2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0 0 8px}
-.nextlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
-.nx{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;text-decoration:none}
-.nx:hover{border-color:var(--bay)}
-.nx .t{font-weight:500}
-.nx .d{color:var(--muted);font-size:13px}
-.nx.late{border-left:3px solid var(--late)}
-.tabs{display:flex;gap:4px;margin-bottom:12px}
-.tab{border:1px solid var(--line);background:transparent;padding:7px 14px;border-radius:6px;cursor:pointer}
-.tab[aria-selected="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-.legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0 0 12px;color:var(--muted);font-size:13px}
-.legend span{display:inline-flex;align-items:center;gap:6px}
-.mk{--c:var(--dr);display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;
-  border:2px solid var(--c);color:var(--c);background:var(--surface);font-size:11px;font-weight:600;text-decoration:none;flex:none}
-.mk.dr{--c:var(--dr)} .mk.rv{--c:var(--rv)} .mk.pub{--c:var(--pub)} .mk.li{--c:var(--li)}
-.mk.done{background:var(--c);color:var(--surface)}
-.mk.late{--c:var(--late)}
-.mk.pub{width:26px;height:26px;font-size:12px}
-.mk:hover{transform:scale(1.12)}
-.scroller{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
-.grid{display:grid;min-width:max-content}
-.grid>div{border-bottom:1px solid var(--line)}
-.corner,.lab{position:sticky;left:0;z-index:2;background:var(--surface);border-right:1px solid var(--line)}
-.lab{padding:10px 12px;display:flex;flex-direction:column;justify-content:center;min-height:52px}
-.lab a{text-decoration:none;font-weight:600}
-.lab a:hover{text-decoration:underline}
-.lab small{color:var(--muted);font-size:12px}
-.mon{padding:8px 10px;font-weight:600;font-size:13px;border-left:1px solid var(--line);background:var(--surface)}
-.wk{padding:4px 6px;color:var(--muted);font-size:11px;border-left:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
-.cell{border-left:1px solid var(--line);padding:6px 4px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;align-content:center;justify-content:center;min-height:52px}
-.tw{background:var(--today)}
-.months{display:grid;gap:22px}
-.month{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.month header{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;justify-content:space-between;padding:12px 16px;margin:0;border-bottom:1px solid var(--line)}
-.month h3{font-family:var(--font-display);font-weight:400;font-size:26px;margin:0}
-.counts{color:var(--muted);font-size:13px}
-.row{display:grid;grid-template-columns:64px 28px minmax(0,1fr) minmax(0,200px) 72px;gap:10px;align-items:center;padding:9px 16px;border-bottom:1px solid var(--line)}
-.row:last-child{border-bottom:0}
-.row .dt{font-variant-numeric:tabular-nums;color:var(--muted)}
-.row .nm a{text-decoration:none}
-.row .nm a:hover{text-decoration:underline}
-.row .art{color:var(--muted);font-size:13px}
-.row .st{font-size:12px;text-align:right;color:var(--muted)}
-.row .st.late{color:var(--late);font-weight:600}
-.row .st.ok{color:var(--pub);font-weight:600}
-.msg{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--bay);border-radius:8px;padding:14px 16px;margin:12px 0}
-.msg.err{border-left-color:var(--late)}
-.msg b{display:block;margin-bottom:2px}
-footer{margin-top:26px;color:var(--muted);font-size:13px}
-@media (max-width:640px){
-  h1{font-size:32px}
-  .row{grid-template-columns:56px 28px minmax(0,1fr);}
-  .row .art,.row .st{grid-column:3}
-  .row .st{text-align:left}
-}
-@media (prefers-reduced-motion:reduce){.mk:hover{transform:none}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px 48px}
+.wrap{max-width:1500px;margin:0 auto}
+.top{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}
+h1{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:30px;letter-spacing:-.01em}
+.sub{color:var(--mute);font-size:13px;margin-top:4px}
+.sheet{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:10px 14px;text-decoration:none;color:var(--ink);font-size:13px}
+.sheet:hover{border-color:var(--accent)}
+.sheet b{display:block;font-weight:600}
+.sheet small{color:var(--mute);font-size:11px}
+.sheet svg{flex:none;color:var(--accent)}
+.bar-row{display:flex;gap:14px 22px;flex-wrap:wrap;align-items:center;margin-bottom:14px;font-size:12px;color:var(--mute)}
+.bar-row button{font:inherit;font-size:12px;padding:4px 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);cursor:pointer}
+.bar-row button:hover{border-color:var(--accent)}
+.key{display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.dot.web{background:var(--web)}.dot.rev{background:var(--rev)}.dot.li{background:var(--li)}
+.dot.prop{background:transparent;border:1.5px dashed var(--mute)}
+label.tog{display:inline-flex;gap:6px;align-items:center;cursor:pointer;color:var(--ink)}
+.gantt{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
+.head{display:grid;grid-template-columns:var(--task-w) 1fr;background:var(--panel);border-bottom:1px solid var(--line)}
+.head .l{border-right:1px solid var(--line);padding:10px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);display:flex;align-items:flex-end}
+.months{display:flex}
+.mo{text-align:center;padding:9px 0 7px;font-size:12px;font-weight:600;border-right:1px solid var(--line);white-space:nowrap;overflow:hidden}
+.mo:last-child{border-right:0}
+.wk{position:relative;height:22px;border-top:1px solid var(--line2)}
+.wk span{position:absolute;top:4px;transform:translateX(-50%);font-size:10px;color:var(--mute)}
+.body{position:relative}
+.grid{position:absolute;left:var(--task-w);right:0;top:0;bottom:0;pointer-events:none;z-index:0}
+.gl{position:absolute;top:0;bottom:0;width:1px;background:var(--line2)}
+.today{position:absolute;top:0;bottom:0;width:2px;background:var(--today);z-index:4}
+.today::after{content:"Today";position:absolute;top:2px;left:4px;font-size:10px;color:var(--today);font-weight:600}
+.rows{display:grid;grid-template-columns:var(--task-w) 1fr;position:relative;z-index:1}
+.c{border-bottom:1px solid var(--line2);min-height:38px;display:flex;align-items:center}
+.cl{padding:6px 14px;border-right:1px solid var(--line);gap:8px}
+.cr{position:relative}
+.sec{grid-column:1 / -1;background:var(--panel);border-bottom:1px solid var(--line);border-top:1px solid var(--line);padding:8px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--mute);font-weight:600}
+.piece .cl{cursor:pointer;background:transparent;user-select:none}
+.piece .cl:hover{background:var(--panel)}
+.caret{width:12px;font-size:10px;color:var(--mute);flex:none}
+.caret::before{content:"\25BE"}.collapsed .caret::before{content:"\25B8"}
+.pname{font-weight:600;font-size:13px;line-height:1.25;flex:1;min-width:0}
+.pdue{font-size:11px;color:var(--mute);white-space:nowrap;border-left:1px solid var(--line);padding-left:10px;align-self:stretch;display:flex;align-items:center}
+.icons{display:inline-flex;gap:4px;flex:none;border-left:1px solid var(--line);padding-left:10px;margin-left:2px;align-self:stretch;align-items:center}
+.piece .cl .icons:last-child{padding-right:0}
+.ic{width:20px;height:20px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#fff}
+.ic.web{background:var(--web)}.ic.li{background:var(--li)}
+@media (prefers-color-scheme:dark){.ic{color:#111}}
+.ic svg{width:12px;height:12px}
+.s .cl{padding-left:44px}
+.s .tname{font-size:12.5px;color:var(--ink);line-height:1.3}
+.ss .cl{padding-left:70px}
+.ss .tname{font-size:12px;color:var(--mute);line-height:1.3}
+.tag{font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;border:1px dashed var(--mute);border-radius:4px;padding:0 4px;color:var(--mute);margin-left:6px;white-space:nowrap}
+.range{position:absolute;top:50%;height:20px;transform:translateY(-50%);border-radius:5px;background:linear-gradient(90deg,var(--web),var(--li));opacity:.9}
+.range .lbl{position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);font-size:11px;color:var(--mute);white-space:nowrap}
+.ms{position:absolute;top:50%;width:14px;height:14px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid var(--bg);box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+.ms.web{background:var(--web)}.ms.rev{background:var(--rev)}.ms.li{background:var(--li)}
+.ms.pub{width:16px;height:16px;border-radius:3px;transform:translate(-50%,-50%) rotate(45deg)}
+.ms.prop{background:transparent;border:1.5px dashed var(--mute);box-shadow:none;width:11px;height:11px}
+.mlbl{position:absolute;top:50%;transform:translateY(-50%);font-size:11px;color:var(--mute);white-space:nowrap}
+.hide{display:none!important}
+.foot{margin-top:14px;font-size:12px;color:var(--mute);line-height:1.5}
+.err{padding:18px;color:var(--mute);font-size:13px}
+@media (max-width:900px){:root{--task-w:230px}.pdue{display:none}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
+  <div class="top">
     <div>
-      <h1>Black Bay Editorial Calendar</h1>
-      <p class="sub">Every insight article and what we do with it, week by week. Nothing on this page is typed in by hand. It reads the BBP - Program project in Asana.</p>
+      <h1>Black Bay Partners: Editorial Calendar</h1>
+      <div class="sub">Last update: <span id="gen"></span></div>
     </div>
-    <div class="sync">
-      <span id="synced" aria-live="polite">Connecting to Asana</span>
-      <button class="btn" id="refresh" type="button">Refresh</button>
+    <a class="sheet" id="sheet" href="https://docs.google.com/spreadsheets/d/1PTx9kSYYL98e-r5njal2AzMrxfTFKBj4wtY1yi4FKDc/edit" target="_blank" rel="noopener">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/></svg>
+      <span><b>Review content spreadsheet</b><small>Opens in Google Drive</small></span>
+    </a>
+  </div>
+
+  <div class="bar-row">
+    <button id="collapse">Collapse all</button><button id="expand">Expand all</button>
+    <label class="tog"><input type="checkbox" id="showprop" checked> Show proposed sub-subtasks</label>
+    <span class="key"><span class="dot web"></span>Website</span>
+    <span class="key"><span class="dot rev"></span>Review</span>
+    <span class="key"><span class="dot li"></span>LinkedIn</span>
+    <span class="key">&#9670; Publish date</span>
+    <span class="key"><span class="dot prop"></span>Proposed, not in Asana yet</span>
+  </div>
+
+  <div class="gantt">
+    <div class="head">
+      <div class="l">Content piece, platforms</div>
+      <div><div class="months" id="months"></div><div class="wk" id="wk"></div></div>
     </div>
-  </header>
-
-  <div id="status"></div>
-  <div id="stats" class="stats" hidden></div>
-  <section id="next" class="next" hidden></section>
-
-  <div class="tabs" role="tablist" aria-label="Calendar views">
-    <button class="tab" role="tab" id="tab-pipeline" aria-selected="true" data-view="pipeline" type="button">Pipeline by week</button>
-    <button class="tab" role="tab" id="tab-by-month" aria-selected="false" data-view="by-month" type="button">By month</button>
+    <div class="body" id="body">
+      <div class="grid" id="grid"></div>
+      <div class="rows" id="rows"></div>
+    </div>
   </div>
-  <div class="legend" aria-label="Legend">
-    <span><i class="mk dr" style="width:18px;height:18px;font-size:10px">D</i> Draft</span>
-    <span><i class="mk rv" style="width:18px;height:18px;font-size:10px">R</i> Client review</span>
-    <span><i class="mk pub" style="width:20px;height:20px;font-size:10px">P</i> Publish to site and hub feed</span>
-    <span><i class="mk li" style="width:18px;height:18px;font-size:10px">L</i> LinkedIn</span>
-    <span><i class="mk dr done" style="width:18px;height:18px;font-size:10px">&#10003;</i> Done</span>
-    <span><i class="mk dr late" style="width:18px;height:18px;font-size:10px">!</i> Overdue</span>
-  </div>
-  <main id="view" aria-live="polite"></main>
-  <footer>Open any marker or task name to edit it in Asana. Changes there show up here after a refresh.</footer>
 </div>
 
 <script>
+fetch("data.json?"+Date.now(),{cache:"no-store"}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(DATA){
 (function(){
-  var SERVER = "Asana";
-  var SECTION = "1213220255797655"; /* Content Development section of BBP - Program */
-  var LIST_FIELDS = "name,due_on,completed,permalink_url";
-  var KIND_LABEL = {dr:"D", rv:"R", pub:"P", li:"L"};
-  var KIND_NAME = {dr:"Draft", rv:"Review", pub:"Publish", li:"LinkedIn"};
+  var DAY=86400000;
+  function d(s){return new Date(s+"T00:00:00Z")}
+  var start=d("2026-11-16"), end=d("2027-02-22"), total=end-start;
+  function pct(s){return (d(s)-start)/total*100}
+  function pctD(dt){return (dt-start)/total*100}
+  function fmt(s){var x=d(s);return x.toLocaleDateString("en-US",{month:"short",day:"numeric",timeZone:"UTC"})}
+  document.getElementById("gen").textContent=new Date(DATA.generated).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
 
-  var mcp = null;
-  var parents = {};        /* gid -> {gid,name,due,completed,url} from the section list */
-  var details = {};        /* gid -> {parent, subs[]} from get_task */
-  var listLoaded = false;
-  var errors = {};         /* key -> error object */
-  var syncedAt = null;
-  var view = "pipeline";
-  var staticMode = false;  /* true when showing the committed data.json snapshot */
-  var snapshotAt = null;
-
-  var $ = function(id){ return document.getElementById(id); };
-  function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
-  function A(url, cls, inner, extra){
-    return url ? '<a' + (cls ? ' class="' + cls + '"' : '') + ' href="' + esc(url) + '" target="_blank" rel="noopener"' + (extra || '') + '>' + inner + '</a>'
-               : '<span' + (cls ? ' class="' + cls + '"' : '') + (extra || '') + '>' + inner + '</span>';
+  // header
+  var months=document.getElementById("months"), wk=document.getElementById("wk"), grid=document.getElementById("grid");
+  var cur=new Date(start);
+  while(cur<end){
+    var m=cur.getUTCMonth(), y=cur.getUTCFullYear();
+    var nxt=new Date(Date.UTC(y,m+1,1)); if(nxt>end) nxt=end;
+    var el=document.createElement("div"); el.className="mo";
+    el.style.flex="0 0 "+((nxt-cur)/total*100)+"%";
+    el.textContent=cur.toLocaleDateString("en-US",{month:"long",year:"numeric",timeZone:"UTC"});
+    months.appendChild(el); cur=nxt;
   }
-  function parseDate(s){ if(!s) return null; var p = String(s).split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
-  function startOfWeek(d){ var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); var wd = (x.getDay()+6)%7; x.setDate(x.getDate()-wd); return x; }
-  function addDays(d,n){ var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate()+n); return x; }
-  function fmt(d){ return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
-  function fmtLong(d){ return d.toLocaleDateString("en-US",{month:"long",year:"numeric"}); }
-  var now = new Date();
-  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  for(var t=new Date(start);t<end;t=new Date(t.getTime()+7*DAY)){
+    var p=pctD(t)+0.4;
+    var s=document.createElement("span"); s.style.left=p+"%"; s.textContent=t.getUTCDate(); wk.appendChild(s);
+    var g=document.createElement("div"); g.className="gl"; g.style.left=pctD(t)+"%"; grid.appendChild(g);
+  }
+  var now=new Date(); var td=new Date(Date.UTC(now.getFullYear(),now.getMonth(),now.getDate()));
+  if(td>=start&&td<=end){var tl=document.createElement("div");tl.className="today";tl.style.left=pctD(td)+"%";grid.appendChild(tl)}
 
-  function classify(n){
+  var SVG={
+    web:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>',
+    li:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.3 11l7.4-4M8.3 13l7.4 4"/></svg>'
+  };
+  function kind(n){
     if(/^\[LinkedIn\]/i.test(n)) return "li";
-    if(/^\[Review\]/i.test(n)) return "rv";
+    if(/^\[Review\]/i.test(n)) return "rev";
     if(/^\[Web\]\s*Publish/i.test(n)) return "pub";
-    return "dr";
+    return "web";
   }
-  function cleanLabel(n){ return n.replace(/^\[[^\]]+\]\s*/,""); }
-  function cleanTitle(n){ return n.replace(/^(Insight Article|Hub):\s*/i,""); }
-  function unwrap(res){
-    var p = res && res.payload;
-    if(p === undefined && res && res.content && res.content[0] && res.content[0].text){
-      try{ p = JSON.parse(res.content[0].text); }catch(e){ p = null; }
+  function clean(n){return n.replace(/^\[[^\]]+\]\s*/,"")}
+  // proposed sub-subtasks, only for LinkedIn graphics and posts (illustrative)
+  function proposed(task){
+    var n=task.name;
+    if(/Announcement|LinkedIn Post/i.test(n)) return ["Write post copy","Schedule post"];
+    if(/graphic/i.test(n)) return ["Write graphic copy","Design graphic","Schedule post"];
+    if(/Publish/i.test(n)) return ["Add internal links","Update hub feed"];
+    return [];
+  }
+  var rows=document.getElementById("rows"), pi=0;
+  function cell(cls,html){var e=document.createElement("div");e.className="c "+cls;if(html!=null)e.innerHTML=html;return e}
+  function sec(t){var e=document.createElement("div");e.className="sec";e.textContent=t;rows.appendChild(e)}
+  var hubDone=false, artDone=false;
+  DATA.pieces.forEach(function(p){
+    var isHub=/^Hub:/i.test(p.name);
+    if(isHub&&!hubDone){sec("Hub page");hubDone=true}
+    if(!isHub&&!artDone){sec("INSIGHT ARTICLES / SPOKES");artDone=true}
+    var id="p"+(pi++);
+    var kinds={};
+    p.tasks.forEach(function(t){var k=kind(t.name);kinds[k==="rev"?"rev":(k==="li"?"li":"web")]=1});
+    var ic="";
+    if(kinds.web) ic+='<span class="ic web" title="Website">'+SVG.web+'</span>';
+    if(kinds.li) ic+='<span class="ic li" title="LinkedIn">'+SVG.li+'</span>';
+    var dates=p.tasks.map(function(t){return t.due}).filter(Boolean).sort();
+    var name=p.name.replace(/^(Hub|Insight Article):\s*/,"");
+    var left=cell("piece cl","");
+    left.dataset.id=id; left.setAttribute("role","button"); left.tabIndex=0;
+    left.innerHTML='<span class="caret"></span><span class="pname">'+name+'</span><span class="icons">'+ic+'</span><span class="pdue">'+(p.due?"Pub "+fmt(p.due):"")+'</span>';
+    var right=cell("cr piece","");right.dataset.pr=id;
+    if(dates.length){
+      var a=pct(dates[0]), b=pct(dates[dates.length-1]);
+      var r=document.createElement("div");r.className="range";r.style.left=a+"%";r.style.width=Math.max(b-a,0.8)+"%";
+      r.innerHTML='<span class="lbl">'+fmt(dates[0])+(dates.length>1&&dates[0]!==dates[dates.length-1]?" to "+fmt(dates[dates.length-1]):"")+'</span>';
+      right.appendChild(r);
     }
-    if(p && typeof p === "object" && p.data !== undefined) return p.data;
-    return p;
-  }
-
-  /* ---------- data ---------- */
-  var loading = false;
-  function call(tool, input){ return mcp.callTool(SERVER, tool, input, {cache:false}); }
-  function pool(list, n, fn){
-    return new Promise(function(resolve){
-      if(!list.length){ resolve(); return; }
-      var i = 0, active = 0, done = 0;
-      function next(){
-        while(active < n && i < list.length){
-          (function(item){
-            active++;
-            fn(item).then(function(){}, function(){}).then(function(){
-              active--; done++;
-              if(done === list.length) resolve(); else next();
-            });
-          })(list[i++]);
-        }
+    rows.appendChild(left);rows.appendChild(right);
+    p.tasks.slice().sort(function(x,y){return (x.due||"").localeCompare(y.due||"")}).forEach(function(t){
+      var k=kind(t.name);
+      var l=cell("s cl",'<span class="tname">'+clean(t.name)+'</span>');l.dataset.g=id;
+      var rr=cell("cr s","");rr.dataset.g=id;
+      if(t.due){
+        var m=document.createElement("div");m.className="ms "+(k==="pub"?"web pub":k);m.style.left=pct(t.due)+"%";rr.appendChild(m);
+        var lb=document.createElement("div");lb.className="mlbl";
+        var p0=pct(t.due);
+        if(p0>88){lb.style.right=(100-p0+1.4)+"%"}else{lb.style.left=(p0+1.4)+"%"}
+        lb.textContent=fmt(t.due);rr.appendChild(lb);
       }
-      next();
-    });
-  }
-  function fail(key){ return function(e){ errors[key] = e || {code:"upstream_error"}; }; }
-
-  function load(){
-    if(!mcp || loading) return;
-    loading = true;
-    $("synced").textContent = "Loading from Asana";
-    var count = 0;
-    call("get_tasks", {section:SECTION, limit:100, opt_fields:LIST_FIELDS}).then(function(res){
-      errors = {};
-      var data = unwrap(res) || [];
-      var ps = {};
-      data.forEach(function(t){
-        if(/^(Hub:|Insight Article:)/i.test(t.name || "")){
-          ps[t.gid] = {gid:t.gid, name:t.name, due:t.due_on, completed:!!t.completed, url:t.permalink_url};
+      rows.appendChild(l);rows.appendChild(rr);
+      var props=proposed(t);
+      props.forEach(function(nm,i){
+        var l2=cell("ss cl",'<span class="tname">'+nm+'</span><span class="tag">proposed</span>');l2.dataset.g=id;l2.dataset.prop="1";
+        var r2=cell("cr ss","");r2.dataset.g=id;r2.dataset.prop="1";
+        if(t.due){
+          var off=(props.length-i)*2;
+          var dt=new Date(d(t.due).getTime()-off*DAY);
+          if(dt.getUTCDay()===0)dt=new Date(dt.getTime()-2*DAY); if(dt.getUTCDay()===6)dt=new Date(dt.getTime()-DAY);
+          var mm=document.createElement("div");mm.className="ms prop";mm.style.left=pctD(dt)+"%";r2.appendChild(mm);
         }
-      });
-      parents = ps; listLoaded = true; render();
-      var gids = Object.keys(ps);
-      /* get_task lists subtasks by name only, so fetch the subtask ids first, then each subtask for its date */
-      return pool(gids, 6, function(g){
-        return call("get_task", {task_id:g, opt_fields:"name,subtasks.name", include_comments:false}).then(function(r){
-          var t = unwrap(r) || {};
-          details[g] = {subs:(t.subtasks || []).map(function(s){ return {gid:s.gid, name:s.name || "", kind:classify(s.name || "")}; })};
-        }, fail("t" + g));
-      }).then(function(){
-        var subs = [];
-        gids.forEach(function(g){ ((details[g] && details[g].subs) || []).forEach(function(s){ subs.push(s); }); });
-        return pool(subs, 8, function(s){
-          return call("get_task", {task_id:s.gid, opt_fields:"name,due_on,completed,permalink_url", include_comments:false, include_subtasks:false}).then(function(r){
-            var t = unwrap(r) || {};
-            s.due = t.due_on; s.completed = !!t.completed; s.url = t.permalink_url;
-            if(t.name) { s.name = t.name; s.kind = classify(t.name); }
-            if(++count % 8 === 0) render();
-          }, fail("s" + s.gid));
-        });
-      });
-    }).catch(fail("list")).then(function(){
-      loading = false;
-      syncedAt = Date.now();
-      render();
-    });
-  }
-  function stamp(){}
-
-  /* ---------- derived ---------- */
-  function model(){
-    var ps = Object.keys(parents).map(function(g){ return parents[g]; })
-      .sort(function(a,b){ return (a.due||"9").localeCompare(b.due||"9"); });
-    var items = [];
-    ps.forEach(function(p){
-      var d = details[p.gid];
-      var title = cleanTitle(p.name);
-      if(d){ d.subs.forEach(function(s){
-        items.push({gid:s.gid, parent:p, title:title, label:cleanLabel(s.name), kind:s.kind, due:parseDate(s.due), completed:s.completed, url:s.url});
-      }); }
-    });
-    items = items.filter(function(i){ return i.due; });
-    items.forEach(function(i){ i.late = !i.completed && i.due < today; });
-    return {parents:ps, items:items};
-  }
-
-  /* ---------- render ---------- */
-  function render(){
-    renderStatus();
-    var m = model();
-    renderStats(m);
-    renderNext(m);
-    var v = $("view");
-    if(!m.items.length){
-      v.innerHTML = loading || !listLoaded ? '<div class="msg"><b>Loading from Asana</b>Reading the Content Development section of BBP - Program.</div>' : '<div class="msg"><b>No dated tasks found</b>Asana returned no subtasks with due dates under tasks named "Insight Article:" or "Hub:" in Content Development.</div>';
-      return;
-    }
-    v.innerHTML = view === "pipeline" ? pipeline(m) : byMonth(m);
-  }
-  function renderStatus(){
-    var el = $("status");
-    var codes = Object.keys(errors);
-    var syncEl = $("synced");
-    if(staticMode){
-      syncEl.textContent = snapshotAt ? "Snapshot from Asana, " + new Date(snapshotAt).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "Snapshot from Asana";
-      el.innerHTML = "";
-      return;
-    }
-    if(syncedAt){ syncEl.textContent = "Synced from Asana " + new Date(syncedAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); }
-    if(!codes.length){ el.innerHTML = ""; return; }
-    var e = errors[codes[0]];
-    var title = "Asana did not respond", body = "Press Refresh to try again.";
-    switch(e.code){
-      case "needs_reauth": title = "Asana sign-in expired"; body = "Reconnect Asana in claude.ai Settings under Connectors, then press Refresh."; break;
-      case "server_not_connected": title = "Asana is not connected"; body = "Add Asana in claude.ai Settings under Connectors, then reload this page."; break;
-      case "selection_required": title = "Choose an Asana connection"; body = "More than one Asana connector is available. Pick one when claude.ai asks, then press Refresh."; break;
-      case "not_in_manifest": case "approval_required": case "consent_required": title = "This page is not allowed to read Asana yet"; body = "Allow the Asana connection for this page when claude.ai asks, then press Refresh."; break;
-      case "blocked_by_policy": title = "Your organization blocks this Asana request"; body = "Ask an admin to allow the Asana task tools."; break;
-      case "tool_error": title = "Asana reported a problem"; body = "The request reached Asana but failed. Press Refresh. If it repeats, check that BBP - Program is still shared with you."; break;
-    }
-    el.innerHTML = '<div class="msg err" role="alert"><b>' + esc(title) + '</b>' + esc(body) + '</div>';
-  }
-  function renderStats(m){
-    var el = $("stats");
-    if(!m.items.length){ el.hidden = true; return; }
-    var done = m.items.filter(function(i){ return i.completed; }).length;
-    var late = m.items.filter(function(i){ return i.late; }).length;
-    var pubs = m.items.filter(function(i){ return i.kind === "pub"; }).length;
-    el.hidden = false;
-    el.innerHTML =
-      '<div class="stat"><b>' + m.parents.length + '</b><span>content pieces</span></div>' +
-      '<div class="stat"><b>' + pubs + '</b><span>site publishes scheduled</span></div>' +
-      '<div class="stat"><b>' + m.items.length + '</b><span>tasks in the plan</span></div>' +
-      '<div class="stat"><b>' + done + '</b><span>done</span></div>' +
-      '<div class="stat' + (late ? " late" : "") + '"><b>' + late + '</b><span>overdue</span></div>';
-  }
-  function renderNext(m){
-    var el = $("next");
-    var open = m.items.filter(function(i){ return !i.completed; }).sort(function(a,b){ return a.due - b.due; });
-    var late = open.filter(function(i){ return i.late; });
-    var upcoming = open.filter(function(i){ return !i.late; });
-    var list = late.concat(upcoming).slice(0,6);
-    if(!list.length){ el.hidden = true; return; }
-    el.hidden = false;
-    el.innerHTML = '<h2>Next up</h2><div class="nextlist">' + list.map(function(i){
-      return A(i.url, 'nx' + (i.late ? " late" : ""),
-        marker(i, true) +
-        '<span><span class="t">' + esc(i.label) + '</span><br><span class="d">' + fmt(i.due) + (i.late ? " (overdue)" : "") + '</span></span>');
-    }).join("") + '</div>';
-  }
-  function marker(i, asSpan){
-    var cls = "mk " + i.kind + (i.completed ? " done" : "") + (i.late ? " late" : "");
-    var txt = i.completed ? "&#10003;" : (i.late ? "!" : KIND_LABEL[i.kind]);
-    var tip = KIND_NAME[i.kind] + ": " + i.label + ", " + fmt(i.due) + (i.completed ? ", done" : (i.late ? ", overdue" : ""));
-    if(asSpan || !i.url) return '<i class="' + cls + '" title="' + esc(tip) + '">' + txt + '</i>';
-    return A(i.url, cls, txt, ' title="' + esc(tip) + '" aria-label="' + esc(tip) + '"');
-  }
-
-  function pipeline(m){
-    var minD = m.items.reduce(function(a,i){ return i.due < a ? i.due : a; }, m.items[0].due);
-    var maxD = m.items.reduce(function(a,i){ return i.due > a ? i.due : a; }, m.items[0].due);
-    var first = startOfWeek(minD < today ? minD : today);
-    var last = startOfWeek(maxD);
-    var weeks = [];
-    for(var w = first; w <= last; w = addDays(w,7)) weeks.push(w);
-    var cols = "minmax(190px,230px) repeat(" + weeks.length + ", 76px)";
-    var out = '<div class="scroller"><div class="grid" style="grid-template-columns:' + cols + '">';
-    /* month header */
-    out += '<div class="corner"></div>';
-    var i0 = 0;
-    while(i0 < weeks.length){
-      var key = weeks[i0].getFullYear()*12 + weeks[i0].getMonth(), span = 1;
-      while(i0+span < weeks.length && (weeks[i0+span].getFullYear()*12 + weeks[i0+span].getMonth()) === key) span++;
-      out += '<div class="mon" style="grid-column:span ' + span + '">' + esc(weeks[i0].toLocaleDateString("en-US",{month:"long",year:"numeric"})) + '</div>';
-      i0 += span;
-    }
-    out += '<div class="corner"></div>';
-    weeks.forEach(function(w){
-      var tw = today >= w && today < addDays(w,7);
-      out += '<div class="wk' + (tw ? " tw" : "") + '">' + (tw ? "This week<br>" : "Wk of<br>") + fmt(w) + '</div>';
-    });
-    m.parents.forEach(function(p){
-      var mine = m.items.filter(function(i){ return i.parent.gid === p.gid; });
-      var title = cleanTitle(p.name);
-      var pubDate = p.due ? parseDate(p.due) : null;
-      out += '<div class="lab">' + (p.url ? A(p.url, '', esc(title)) : '<b>' + esc(title) + '</b>') + '<small>' +
-        (/^Hub:/i.test(p.name) ? "Hub page" : "Insight article") + (pubDate ? ", publishes " + fmt(pubDate) : "") + '</small></div>';
-      weeks.forEach(function(w){
-        var end = addDays(w,7);
-        var here = mine.filter(function(i){ return i.due >= w && i.due < end; }).sort(function(a,b){ return a.due - b.due; });
-        var tw = today >= w && today < end;
-        out += '<div class="cell' + (tw ? " tw" : "") + '">' + here.map(function(i){ return marker(i,false); }).join("") + '</div>';
+        rows.appendChild(l2);rows.appendChild(r2);
       });
     });
-    out += '</div></div>';
-    if(loading){ out += '<p class="counts" style="margin-top:8px">Still loading task dates from Asana.</p>'; }
-    return out;
-  }
-
-  function byMonth(m){
-    var groups = {};
-    m.items.forEach(function(i){
-      var k = i.due.getFullYear()*100 + i.due.getMonth();
-      (groups[k] = groups[k] || []).push(i);
-    });
-    var keys = Object.keys(groups).sort(function(a,b){ return a - b; });
-    return '<div class="months">' + keys.map(function(k){
-      var arr = groups[k].sort(function(a,b){ return a.due - b.due || a.parent.due.localeCompare(b.parent.due); });
-      var c = {dr:0, rv:0, pub:0, li:0};
-      arr.forEach(function(i){ c[i.kind]++; });
-      var parts = [];
-      if(c.dr) parts.push(c.dr + (c.dr === 1 ? " draft" : " drafts"));
-      if(c.rv) parts.push(c.rv + (c.rv === 1 ? " review" : " reviews"));
-      if(c.pub) parts.push(c.pub + (c.pub === 1 ? " publish" : " publishes"));
-      if(c.li) parts.push(c.li + " LinkedIn");
-      return '<section class="month"><header><h3>' + esc(fmtLong(arr[0].due)) + '</h3><span class="counts">' + parts.join(", ") + '</span></header>' +
-        arr.map(function(i){
-          var st = i.completed ? '<span class="st ok">Done</span>' : (i.late ? '<span class="st late">Overdue</span>' : '<span class="st">Open</span>');
-          return '<div class="row"><span class="dt">' + fmt(i.due) + '</span>' + marker(i,false) +
-            '<span class="nm">' + A(i.url, '', esc(i.label)) + '</span>' +
-            '<span class="art">' + esc(i.title) + '</span>' + st + '</div>';
-        }).join("") + '</section>';
-    }).join("") + '</div>';
-  }
-
-  /* ---------- controls ---------- */
-  function setView(v, fromHash){
-    view = v;
-    ["pipeline","by-month"].forEach(function(n){ $("tab-"+n).setAttribute("aria-selected", n === v ? "true" : "false"); });
-    if(!fromHash){ try{ history.replaceState(null,"","#"+v); }catch(e){ try{ location.hash = v; }catch(e2){} } }
-    render();
-  }
-  document.querySelectorAll(".tab").forEach(function(b){ b.addEventListener("click", function(){ setView(b.getAttribute("data-view")); }); });
-  window.addEventListener("hashchange", function(){ var h = location.hash.replace("#",""); if(h === "pipeline" || h === "by-month") setView(h, true); });
-  var h0 = location.hash.replace("#",""); if(h0 === "by-month") setView("by-month", true);
-
-  $("refresh").addEventListener("click", function(){
-    if(staticMode){ loadStatic().catch(noMcp); return; }
-    if(!mcp) return;
-    load();
   });
 
-  /* ---------- snapshot mode ---------- */
-  function loadStatic(){
-    return fetch("data.json?" + Date.now(), {cache:"no-store"}).then(function(r){
-      if(!r.ok) throw new Error("data.json " + r.status);
-      return r.json();
-    }).then(function(d){
-      parents = {}; details = {};
-      (d.pieces || []).forEach(function(p, i){
-        var g = "p" + i;
-        parents[g] = {gid:g, name:p.name, due:p.due, completed:!!p.completed, url:null};
-        details[g] = {subs:(p.tasks || []).map(function(t, j){
-          return {gid:g + "-" + j, name:t.name, kind:classify(t.name), due:t.due, completed:!!t.completed, url:null};
-        })};
-      });
-      staticMode = true; listLoaded = true; errors = {};
-      snapshotAt = d.generated ? new Date(d.generated).getTime() : null;
-      var f = document.querySelector("footer");
-      if(f) f.textContent = "Snapshot view. Dates are managed in Asana, and this page is republished from there on request.";
-      render();
+  // collapse logic
+  var collapsed={};
+  var showProp=document.getElementById("showprop");
+  function render(){
+    rows.querySelectorAll("[data-g]").forEach(function(e){
+      var h=collapsed[e.dataset.g]||(e.dataset.prop&&!showProp.checked);
+      e.classList.toggle("hide",!!h);
     });
+    rows.querySelectorAll(".piece.cl").forEach(function(e){e.classList.toggle("collapsed",!!collapsed[e.dataset.id])});
   }
-
-  /* ---------- boot ---------- */
-  function noMcp(){
-    $("synced").textContent = "Not connected";
-    $("status").innerHTML = '<div class="msg err" role="alert"><b>This calendar loads from Asana inside Claude</b>Open it from your artifacts in claude.ai with Asana connected. Outside Claude there is no data to show, and the page will not display made-up dates.</div>';
-  }
-  function boot(){
-    function fallback(){ loadStatic().catch(noMcp); }
-    if(!window.claude || typeof window.claude.use !== "function"){ fallback(); return; }
-    window.claude.use("mcp").then(function(ns){
-      if(!ns){ fallback(); return; }
-      mcp = ns;
-      render();
-      load();
-      setInterval(function(){ if(!document.hidden) load(); }, 300000);
-    }).catch(function(){ fallback(); });
-  }
-  boot();
+  rows.addEventListener("click",function(e){var el=e.target.closest(".piece.cl");if(!el)return;collapsed[el.dataset.id]=!collapsed[el.dataset.id];render()});
+  rows.addEventListener("keydown",function(e){if(e.key!=="Enter"&&e.key!==" ")return;var el=e.target.closest(".piece.cl");if(!el)return;e.preventDefault();collapsed[el.dataset.id]=!collapsed[el.dataset.id];render()});
+  document.getElementById("collapse").onclick=function(){rows.querySelectorAll(".piece.cl").forEach(function(e){collapsed[e.dataset.id]=true});render()};
+  document.getElementById("expand").onclick=function(){collapsed={};render()};
+  showProp.onchange=render;
+  render();
 })();
+}).catch(function(){document.getElementById("rows").innerHTML='<div class="err" style="grid-column:1/-1">Could not load data.json.</div>'});
 </script>
 </body>
 </html>
