@@ -3,9 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BBP Editorial Calendar (Gantt view, for consideration)</title>
+<title>BBP Editorial Calendar</title>
 <meta name="robots" content="noindex, nofollow">
 <style>
+@font-face{font-family:"Poppins";font-weight:400;font-style:normal;font-display:swap;src:url("fonts/poppins-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Poppins";font-weight:500;font-style:normal;font-display:swap;src:url("fonts/poppins-latin-500-normal.woff2") format("woff2")}
+@font-face{font-family:"Poppins";font-weight:600;font-style:normal;font-display:swap;src:url("fonts/poppins-latin-600-normal.woff2") format("woff2")}
 :root{
   --bg:#ffffff;--panel:#fafaf8;--ink:#161614;--mute:#6b6a64;--line:#e6e5df;--line2:#f0efea;
   --web:#1f5f7a;--rev:#b7791f;--li:#7a3e9d;--today:#d0021b;--accent:#103F57;
@@ -16,10 +19,10 @@
     --web:#5fb0d0;--rev:#e0b050;--li:#c295e0;--today:#ff5d6e;--accent:#8fc3dd}
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px 48px}
+body{font-family:"Poppins",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px 48px}
 .wrap{max-width:1500px;margin:0 auto}
 .top{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}
-h1{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:30px;letter-spacing:-.01em}
+h1{font-weight:600;font-size:26px;letter-spacing:-.01em}
 .sub{color:var(--mute);font-size:13px;margin-top:4px}
 .sheet{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:10px 14px;text-decoration:none;color:var(--ink);font-size:13px}
 .sheet:hover{border-color:var(--accent)}
@@ -106,7 +109,7 @@ label.tog{display:inline-flex;gap:6px;align-items:center;cursor:pointer;color:va
 <div class="wrap">
   <div class="top">
     <div>
-      <h1>Black Bay Partners: Editorial Calendar</h1>
+      <h1>BBP Editorial Calendar</h1>
       <div class="sub">Last update: <span id="gen"></span></div>
     </div>
     <a class="sheet" id="sheet" href="https://docs.google.com/spreadsheets/d/1PTx9kSYYL98e-r5njal2AzMrxfTFKBj4wtY1yi4FKDc/edit" target="_blank" rel="noopener">
@@ -116,7 +119,7 @@ label.tog{display:inline-flex;gap:6px;align-items:center;cursor:pointer;color:va
   </div>
 
   <div class="tabs" role="tablist">
-    <button class="tab on" id="tabG" role="tab" data-v="g">Timeline</button>
+    <button class="tab on" id="tabG" role="tab" data-v="g">Overview</button>
     <button class="tab" id="tabS" role="tab" data-v="s">Social calendar</button>
   </div>
 
@@ -260,6 +263,7 @@ fetch("data.json?"+Date.now(),{cache:"no-store"}).then(function(r){if(!r.ok)thro
 
   // collapse logic
   var collapsed={};
+  DATA.pieces.forEach(function(p,i){collapsed["p"+i]=true});
   var showProp=document.getElementById("showprop");
   function render(){
     rows.querySelectorAll("[data-g]").forEach(function(e){
