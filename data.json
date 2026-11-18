@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-18T02:43:12Z",
+ "generated": "2026-11-18T02:51:31Z",
  "source": "Asana, BBP - Program, Content Development",
  "pieces": [
   {
@@ -291,6 +291,12 @@
      "completed": false
     }
    ]
+  },
+  {
+   "name": "Company: General LinkedIn Content",
+   "due": null,
+   "completed": false,
+   "tasks": []
   }
  ]
 }

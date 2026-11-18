@@ -93,7 +93,8 @@ label.tog{display:inline-flex;gap:6px;align-items:center;cursor:pointer;color:va
 .cal .day.we{background:var(--panel)}
 .cal .dn{font-size:12px;color:var(--mute);margin-bottom:4px}
 .cal .day.today .dn{color:#fff;background:var(--today);display:inline-block;border-radius:10px;padding:0 7px}
-.post{display:block;background:color-mix(in srgb,var(--li) 18%,transparent);border-left:3px solid var(--li);border-radius:4px;padding:4px 6px;margin-bottom:4px;font-size:11.5px;line-height:1.3}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block;outline:1px solid color-mix(in srgb,var(--ink) 25%,transparent);outline-offset:-1px}
+.post{display:block;background:color-mix(in srgb,var(--tc) 30%,transparent);border-left:4px solid var(--tc);outline:1px solid color-mix(in srgb,var(--ink) 14%,transparent);outline-offset:-1px;border-radius:4px;padding:4px 6px;margin-bottom:4px;font-size:11.5px;line-height:1.3}
 .post small{display:block;color:var(--mute);font-size:10.5px}
 @media (max-width:900px){.cal .day{min-height:80px;padding:3px}.post{font-size:10px;padding:2px 4px}}
 .foot{margin-top:14px;font-size:12px;color:var(--mute);line-height:1.5}
@@ -146,8 +147,8 @@ label.tog{display:inline-flex;gap:6px;align-items:center;cursor:pointer;color:va
     <div class="bar-row">
       <button id="prevM">&larr;</button><b id="monLbl" style="color:var(--ink);font-size:15px;min-width:130px;text-align:center"></b><button id="nextM">&rarr;</button>
       <span id="monCount"></span>
-      <span class="key"><span class="dot li"></span>LinkedIn post</span>
     </div>
+    <div class="bar-row" id="calKey"></div>
     <div class="cal" id="cal"></div>
   </div>
 </div>
@@ -204,11 +205,13 @@ fetch("data.json?"+Date.now(),{cache:"no-store"}).then(function(r){if(!r.ok)thro
   var rows=document.getElementById("rows"), pi=0;
   function cell(cls,html){var e=document.createElement("div");e.className="c "+cls;if(html!=null)e.innerHTML=html;return e}
   function sec(t){var e=document.createElement("div");e.className="sec";e.textContent=t;rows.appendChild(e)}
-  var hubDone=false, artDone=false;
+  var hubDone=false, artDone=false, coDone=false;
   DATA.pieces.forEach(function(p){
     var isHub=/^Hub:/i.test(p.name);
     if(isHub&&!hubDone){sec("Hub page");hubDone=true}
-    if(!isHub&&!artDone){sec("INSIGHT ARTICLES / SPOKES");artDone=true}
+    var isCo=/^Company:/i.test(p.name);
+    if(isCo&&!coDone){sec("COMPANY");coDone=true}
+    if(!isHub&&!isCo&&!artDone){sec("INSIGHT ARTICLES / SPOKES");artDone=true}
     var id="p"+(pi++);
     var kinds={};
     p.tasks.forEach(function(t){var k=kind(t.name);kinds[k==="rev"?"rev":(k==="li"?"li":"web")]=1});
@@ -216,7 +219,7 @@ fetch("data.json?"+Date.now(),{cache:"no-store"}).then(function(r){if(!r.ok)thro
     if(kinds.web) ic+='<span class="ic web" title="Website">'+SVG.web+'</span>';
     if(kinds.li) ic+='<span class="ic li" title="LinkedIn">'+SVG.li+'</span>';
     var dates=p.tasks.map(function(t){return t.due}).filter(Boolean).sort();
-    var name=p.name.replace(/^(Hub|Insight Article):\s*/,"");
+    var name=p.name.replace(/^(Hub|Insight Article|Company):\s*/,"");
     var left=cell("piece cl","");
     left.dataset.id=id; left.setAttribute("role","button"); left.tabIndex=0;
     left.innerHTML='<span class="caret"></span><span class="pname">'+name+'</span><span class="icons">'+ic+'</span><span class="pdue">'+(p.due?"Pub "+fmt(p.due):"")+'</span>';
@@ -273,11 +276,14 @@ fetch("data.json?"+Date.now(),{cache:"no-store"}).then(function(r){if(!r.ok)thro
   render();
 
   // views
+  var TOPIC={"Market Insights page":["Hub","#103F57"],"Storage":["Storage","#AFCFFF"],"Energy System":["Energy System","#204B2C"],"Sour Gas Treating":["Sour Gas Treating","#870632"],"Midstream":["Midstream","#c46a86"],"Asset Integrity":["Asset Integrity","#FFFEC0"],"Industrial Controls":["Industrial Controls","#6F95B8"],"AI Operating Efficiency":["AI Operating Efficiency","#6C9A76"],"General LinkedIn Content":["Company","#C9A227"]};
+  function tcol(piece){return (TOPIC[piece]||[0,"#8a8984"])[1]}
+  function tname(piece){return (TOPIC[piece]||[piece])[0]}
   var posts={};
   DATA.pieces.forEach(function(p){
-    var piece=p.name.replace(/^(Hub|Insight Article):\s*/,"");
+    var piece=p.name.replace(/^(Hub|Insight Article|Company):\s*/,"");
     p.tasks.forEach(function(t){
-      if(kind(t.name)==="li"&&t.due){(posts[t.due]=posts[t.due]||[]).push({n:/^Hub:/i.test(p.name)?clean(t.name):clean(t.name).replace(/:\s*[^:]*$/,""),piece:piece})}
+      if(kind(t.name)==="li"&&t.due){(posts[t.due]=posts[t.due]||[]).push({col:tcol(piece),n:/^Hub:/i.test(p.name)?clean(t.name):clean(t.name).replace(/:\s*[^:]*$/,""),piece:piece})}
     });
   });
   var keys=Object.keys(posts).sort();
@@ -286,6 +292,10 @@ fetch("data.json?"+Date.now(),{cache:"no-store"}).then(function(r){if(!r.ok)thro
   var firstM=new Date(cm), lastM=keys.length?d(keys[keys.length-1]):cm;
   lastM=new Date(Date.UTC(lastM.getUTCFullYear(),lastM.getUTCMonth(),1));
   function iso(x){return x.toISOString().slice(0,10)}
+  (function(){var seen={},h="";
+    DATA.pieces.forEach(function(p){var pc=p.name.replace(/^(Hub|Insight Article|Company):\s*/,"");if(seen[pc])return;seen[pc]=1;
+      h+='<span class="key"><span class="sw" style="background:'+tcol(pc)+'"></span>'+tname(pc)+'</span>'});
+    document.getElementById("calKey").innerHTML=h})();
   function renderCal(){
     var y=cm.getUTCFullYear(),m=cm.getUTCMonth();
     document.getElementById("monLbl").textContent=cm.toLocaleDateString("en-US",{month:"long",year:"numeric",timeZone:"UTC"});
@@ -297,7 +307,7 @@ fetch("data.json?"+Date.now(),{cache:"no-store"}).then(function(r){if(!r.ok)thro
       if(x.getUTCDay()===0)h+='<div class="wkr">';
       var k=iso(x), out=x.getUTCMonth()!==m, we=x.getUTCDay()===0||x.getUTCDay()===6;
       h+='<div class="day'+(out?" out":"")+(we?" we":"")+(k===todayIso?" today":"")+'"><div class="dn">'+x.getUTCDate()+'</div>';
-      (posts[k]||[]).forEach(function(q){h+='<span class="post">'+q.n+'<small>'+q.piece+'</small></span>';if(!out)count++});
+      (posts[k]||[]).forEach(function(q){h+='<span class="post" style="--tc:'+q.col+'">'+q.n+'<small>'+tname(q.piece)+'</small></span>';if(!out)count++});
       h+='</div>';
       if(x.getUTCDay()===6)h+='</div>';
     }
