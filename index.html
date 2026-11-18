@@ -100,12 +100,12 @@ label.tog{display:inline-flex;gap:6px;align-items:center;cursor:pointer;color:va
 
   <div class="bar-row">
     <button id="collapse">Collapse all</button><button id="expand">Expand all</button>
-    <label class="tog"><input type="checkbox" id="showprop" checked> Show proposed sub-subtasks</label>
+    <label class="tog"><input type="checkbox" id="showprop" checked> Show internal sub-tasks</label>
     <span class="key"><span class="dot web"></span>Website</span>
     <span class="key"><span class="dot rev"></span>Review</span>
     <span class="key"><span class="dot li"></span>LinkedIn</span>
     <span class="key">&#9670; Publish date</span>
-    <span class="key"><span class="dot prop"></span>Proposed, not in Asana yet</span>
+    <span class="key"><span class="dot prop"></span>Internal sub-tasks</span>
   </div>
 
   <div class="gantt">
@@ -210,7 +210,7 @@ fetch("data.json?"+Date.now(),{cache:"no-store"}).then(function(r){if(!r.ok)thro
       rows.appendChild(l);rows.appendChild(rr);
       var props=proposed(t);
       props.forEach(function(nm,i){
-        var l2=cell("ss cl",'<span class="tname">'+nm+'</span><span class="tag">proposed</span>');l2.dataset.g=id;l2.dataset.prop="1";
+        var l2=cell("ss cl",'<span class="tname">'+nm+'</span><span class="tag">internal</span>');l2.dataset.g=id;l2.dataset.prop="1";
         var r2=cell("cr ss","");r2.dataset.g=id;r2.dataset.prop="1";
         if(t.due){
           var off=(props.length-i)*2;
