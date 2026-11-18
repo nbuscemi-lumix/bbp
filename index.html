@@ -293,7 +293,7 @@ fetch("data.json?"+Date.now(),{cache:"no-store"}).then(function(r){if(!r.ok)thro
   lastM=new Date(Date.UTC(lastM.getUTCFullYear(),lastM.getUTCMonth(),1));
   function iso(x){return x.toISOString().slice(0,10)}
   (function(){var seen={},h="";
-    DATA.pieces.forEach(function(p){var pc=p.name.replace(/^(Hub|Insight Article|Company):\s*/,"");if(seen[pc])return;seen[pc]=1;
+    DATA.pieces.forEach(function(p){var pc=p.name.replace(/^(Hub|Insight Article|Company):\s*/,"");if(seen[pc]||!TOPIC[pc])return;seen[pc]=1;
       h+='<span class="key"><span class="sw" style="background:'+tcol(pc)+'"></span>'+tname(pc)+'</span>'});
     document.getElementById("calKey").innerHTML=h})();
   function renderCal(){
