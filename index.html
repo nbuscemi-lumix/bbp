@@ -80,6 +80,22 @@ label.tog{display:inline-flex;gap:6px;align-items:center;cursor:pointer;color:va
 .ms.prop{background:transparent;border:1.5px dashed var(--mute);box-shadow:none;width:11px;height:11px}
 .mlbl{position:absolute;top:50%;transform:translateY(-50%);font-size:11px;color:var(--mute);white-space:nowrap}
 .hide{display:none!important}
+.tabs{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:16px}
+.tab{font:inherit;font-size:13px;padding:7px 16px;border:0;background:var(--panel);color:var(--mute);cursor:pointer}
+.tab.on{background:var(--accent);color:var(--bg);font-weight:600}
+.cal{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.cal .dow{display:grid;grid-template-columns:repeat(7,1fr);background:var(--panel);border-bottom:1px solid var(--line)}
+.cal .dow div{padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
+.cal .wkr{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal .day{min-height:112px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:6px;min-width:0}
+.cal .day:nth-child(7n){border-right:0}
+.cal .day.out{background:var(--panel);opacity:.55}
+.cal .day.we{background:var(--panel)}
+.cal .dn{font-size:12px;color:var(--mute);margin-bottom:4px}
+.cal .day.today .dn{color:#fff;background:var(--today);display:inline-block;border-radius:10px;padding:0 7px}
+.post{display:block;background:color-mix(in srgb,var(--li) 18%,transparent);border-left:3px solid var(--li);border-radius:4px;padding:4px 6px;margin-bottom:4px;font-size:11.5px;line-height:1.3}
+.post small{display:block;color:var(--mute);font-size:10.5px}
+@media (max-width:900px){.cal .day{min-height:80px;padding:3px}.post{font-size:10px;padding:2px 4px}}
 .foot{margin-top:14px;font-size:12px;color:var(--mute);line-height:1.5}
 .err{padding:18px;color:var(--mute);font-size:13px}
 @media (max-width:900px){:root{--task-w:230px}.pdue{display:none}}
@@ -98,6 +114,12 @@ label.tog{display:inline-flex;gap:6px;align-items:center;cursor:pointer;color:va
     </a>
   </div>
 
+  <div class="tabs" role="tablist">
+    <button class="tab on" id="tabG" role="tab" data-v="g">Timeline</button>
+    <button class="tab" id="tabS" role="tab" data-v="s">Social calendar</button>
+  </div>
+
+  <div id="viewG">
   <div class="bar-row">
     <button id="collapse">Collapse all</button><button id="expand">Expand all</button>
     <label class="tog"><input type="checkbox" id="showprop" checked> Show internal sub-tasks</label>
@@ -117,6 +139,16 @@ label.tog{display:inline-flex;gap:6px;align-items:center;cursor:pointer;color:va
       <div class="grid" id="grid"></div>
       <div class="rows" id="rows"></div>
     </div>
+  </div>
+  </div>
+
+  <div id="viewS" class="hide">
+    <div class="bar-row">
+      <button id="prevM">&larr;</button><b id="monLbl" style="color:var(--ink);font-size:15px;min-width:130px;text-align:center"></b><button id="nextM">&rarr;</button>
+      <span id="monCount"></span>
+      <span class="key"><span class="dot li"></span>LinkedIn post</span>
+    </div>
+    <div class="cal" id="cal"></div>
   </div>
 </div>
 
@@ -239,6 +271,53 @@ fetch("data.json?"+Date.now(),{cache:"no-store"}).then(function(r){if(!r.ok)thro
   document.getElementById("expand").onclick=function(){collapsed={};render()};
   showProp.onchange=render;
   render();
+
+  // views
+  var posts={};
+  DATA.pieces.forEach(function(p){
+    var piece=p.name.replace(/^(Hub|Insight Article):\s*/,"");
+    p.tasks.forEach(function(t){
+      if(kind(t.name)==="li"&&t.due){(posts[t.due]=posts[t.due]||[]).push({n:/^Hub:/i.test(p.name)?clean(t.name):clean(t.name).replace(/:\s*[^:]*$/,""),piece:piece})}
+    });
+  });
+  var keys=Object.keys(posts).sort();
+  var mo=keys.length?d(keys[0]):new Date();
+  var cm=new Date(Date.UTC(mo.getUTCFullYear(),mo.getUTCMonth(),1));
+  var firstM=new Date(cm), lastM=keys.length?d(keys[keys.length-1]):cm;
+  lastM=new Date(Date.UTC(lastM.getUTCFullYear(),lastM.getUTCMonth(),1));
+  function iso(x){return x.toISOString().slice(0,10)}
+  function renderCal(){
+    var y=cm.getUTCFullYear(),m=cm.getUTCMonth();
+    document.getElementById("monLbl").textContent=cm.toLocaleDateString("en-US",{month:"long",year:"numeric",timeZone:"UTC"});
+    var gs=new Date(Date.UTC(y,m,1)); gs=new Date(gs.getTime()-gs.getUTCDay()*DAY);
+    var ge=new Date(Date.UTC(y,m+1,0)); ge=new Date(ge.getTime()+(6-ge.getUTCDay())*DAY);
+    var h='<div class="dow">'+["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(function(n){return"<div>"+n+"</div>"}).join("")+'</div>';
+    var count=0, todayIso=iso(td);
+    for(var x=new Date(gs);x<=ge;x=new Date(x.getTime()+DAY)){
+      if(x.getUTCDay()===0)h+='<div class="wkr">';
+      var k=iso(x), out=x.getUTCMonth()!==m, we=x.getUTCDay()===0||x.getUTCDay()===6;
+      h+='<div class="day'+(out?" out":"")+(we?" we":"")+(k===todayIso?" today":"")+'"><div class="dn">'+x.getUTCDate()+'</div>';
+      (posts[k]||[]).forEach(function(q){h+='<span class="post">'+q.n+'<small>'+q.piece+'</small></span>';if(!out)count++});
+      h+='</div>';
+      if(x.getUTCDay()===6)h+='</div>';
+    }
+    document.getElementById("cal").innerHTML=h;
+    document.getElementById("monCount").textContent=count+(count===1?" post":" posts")+" this month";
+    document.getElementById("prevM").disabled=cm<=firstM;
+    document.getElementById("nextM").disabled=cm>=lastM;
+  }
+  document.getElementById("prevM").onclick=function(){cm=new Date(Date.UTC(cm.getUTCFullYear(),cm.getUTCMonth()-1,1));renderCal()};
+  document.getElementById("nextM").onclick=function(){cm=new Date(Date.UTC(cm.getUTCFullYear(),cm.getUTCMonth()+1,1));renderCal()};
+  function setView(v){
+    document.getElementById("viewG").classList.toggle("hide",v!=="g");
+    document.getElementById("viewS").classList.toggle("hide",v!=="s");
+    document.getElementById("tabG").classList.toggle("on",v==="g");
+    document.getElementById("tabS").classList.toggle("on",v==="s");
+    if(v==="s")renderCal();
+    try{history.replaceState(null,"","#"+v)}catch(e){}
+  }
+  document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){setView(b.dataset.v)}});
+  if(location.hash==="#s")setView("s");
 })();
 }).catch(function(){document.getElementById("rows").innerHTML='<div class="err" style="grid-column:1/-1">Could not load data.json.</div>'});
 </script>
